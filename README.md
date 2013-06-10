@@ -30,7 +30,7 @@ Whenever a ```$locationChangeStart``` event is triggered it will go through all 
 In order to continue routing then the ```whenever``` function must return ```truthy``` values.
 If the ```whenever``` function returns ```truthy``` values then it will just continue with the routing.
 
-If the method returns ```falsy``` result then it will cancel the location change event so it would never reach the route configuration.  
+If the method returns ```falsy``` result then it will cancel the location change event so it would never reach the route configuration (no template download? _jay_).
 
 ### Dependency injection with ```whenever``` function
 
@@ -39,7 +39,6 @@ The ```whenever``` function works with dependency injection. It works with all t
 1. using ```$injector``` 
 2. using ```array```
 3. plain function injection
-
 
 ### Devel
 ---

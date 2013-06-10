@@ -1,8 +1,6 @@
 (function (angular) {
   "use strict";
 
-  var selectiveModule = angular.module('ngWhenever', []);
-
   /**
    * Validates if the route matches given path.
    * Builds a regexp to filter out all params from route and matches it against the plain string location.
@@ -34,10 +32,25 @@
     return !! url.match(new RegExp(regex));
   }
 
-  selectiveModule.run([ '$location', '$route', '$rootScope', '$injector', function($location, $route, $rootScope, $injector) {
+  /**
+   * Parse the absolute location to path.
+   *
+   * @param  {String} url absolute url
+   * @return {String} parsed path
+   */
+  function getPath($location, url) {
+    var baseurl = $location.protocol() + "://" + $location.host(),
+        path    = url.substring(baseurl.length, url.length);
+
+    // Remove the hash or hashbang and replace it with an hash
+    return path.replace(/^\/#(.*?)\//, '/');
+  }
+
+  angular.module('ngWhenever', []).run([ '$location' ,'$route', '$rootScope', '$injector', function($location, $route, $rootScope, $injector) {
 
     $rootScope.$on('$locationChangeStart', function(evt, newLocation) {
-      var found = false;
+      var found    = false,
+          location = getPath($location, newLocation);
 
       /**
        * Loop through all the routes and check if their properties have ```whenever``` function
@@ -49,7 +62,7 @@
         if (!found && (angular.isFunction(whenever) || angular.isArray(whenever))) {
 
           // Check if the route matches
-          if (!routeMatches($location.path(), route)) {
+          if (!routeMatches(location, route)) {
             return;
           }
 
