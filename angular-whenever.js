@@ -1,3 +1,19 @@
+/**
+ * Angular whenever.
+ *
+ * Simple angular module that when initiated will listen to `$locationChangeStart` event.
+ * If the event is called then it will go through all registered routes, will check if the route has `whenever` attribute
+ * and if the route matches our current location.
+ *
+ * If the route matches and it has `whenever` property then it will invoke it and evaluate its result.
+ * If the result happens to be falsy then it will prevent the location change.
+ *
+ * Keep in mind that everything that happens in `whenever` function must be synchronous in order for it to matter.
+ * Also you must keep in mind that you cant directly change location from the `whenever` function.
+ * The location change must happen asynchronously for it to work (with next tick).
+ * You can do that with `$rootScope.$evalAsync` for instance.
+ *
+ */
 (function (angular) {
   "use strict";
 
@@ -46,11 +62,13 @@
     return path.replace(/^\/#(.*?)\//, '/');
   }
 
-  angular.module('ngWhenever', []).run([ '$location' ,'$route', '$rootScope', '$injector', function($location, $route, $rootScope, $injector) {
+  angular.module('ngWhenever', [])
+         .run([ '$location' ,'$route', '$rootScope', '$injector', function($location, $route, $rootScope, $injector) {
 
     $rootScope.$on('$locationChangeStart', function(evt, newLocation) {
       var found    = false,
-          location = getPath($location, newLocation);
+          location = getPath($location, newLocation),
+          whenever, result;
 
       /**
        * Loop through all the routes and check if their properties have ```whenever``` function
@@ -58,19 +76,14 @@
        * and decide if we are going to go ahead with the routing or not.
        */
       angular.forEach($route.routes, function(properties, route) {
-        var whenever = properties.whenever;
-        if (!found && (angular.isFunction(whenever) || angular.isArray(whenever))) {
+        whenever = properties.whenever;
 
-          // Check if the route matches
-          if (!routeMatches(location, route)) {
-            return;
-          }
+        // Check if the whenever property is a function or an array and if the route matches
+        if (!found && (angular.isFunction(whenever) || angular.isArray(whenever)) && routeMatches(location, route)) {
 
-          // Get the result from the whenever method
-          var result = $injector.invoke(whenever);
-
-          // If the result does not match then
-          if (!result) {
+          // Execute the injector and parse the result.
+          // If the result happens to be falsey then prevent the route
+          if (!$injector.invoke(whenever)) {
             found = true;
             evt.preventDefault();
           }

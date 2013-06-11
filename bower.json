@@ -1,6 +1,6 @@
 {
   "name": "angular-whenever",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "angular-whenever.js",
   "ignore": [
     "node_modules",
