@@ -68,7 +68,7 @@
     $rootScope.$on('$locationChangeStart', function(evt, newLocation) {
       var found    = false,
           location = getPath($location, newLocation),
-          whenever, result;
+          whenever;
 
       /**
        * Loop through all the routes and check if their properties have ```whenever``` function
