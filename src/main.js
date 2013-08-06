@@ -17,6 +17,10 @@
 (function (angular) {
   "use strict";
 
+  var PORTS       = { http : 80, https: 443 },         // List of common protocols and their matching ports
+      REGEXP_PATH = /^(([^\#]*?)(#[^\/]*?))\/(\?.*)?/  // Regexp for figuring out the pathname
+                                                       // http://fiddle.re/2mx4a for regexp tests
+
   /**
    * Validates if the route matches given path.
    * Builds a regexp to filter out all params from route and matches it against the plain string location.
@@ -27,43 +31,67 @@
    */
   function routeMatches (url, when) {
     // Escape regexp special characters.
+    // We don't have to consider the first slash due the fact that angular adds / to missing urls
     when = '^' + when.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&") + '$';
 
-    var regex = '',
+    var regexp = '',
         re = /:(\w+)/g,
         paramMatch,
         lastMatchedIndex = 0;
 
     while ((paramMatch = re.exec(when)) !== null) {
+
       // Find each :param in `when` and replace it with a capturing group.
       // Append all other sections of when unchanged.
-      regex += when.slice(lastMatchedIndex, paramMatch.index);
-      regex += '([^\\/]*)';
+      regexp += when.slice(lastMatchedIndex, paramMatch.index);
+      regexp += '([^\\/]*)';
       lastMatchedIndex = re.lastIndex;
     }
     // Append trailing path part.
-    regex += when.substr(lastMatchedIndex);
+    regexp += when.substr(lastMatchedIndex);
 
     // Check if the route matches
-    return !! url.match(new RegExp(regex));
+    return !! url.match(new RegExp(regexp));
+  }
+
+  /**
+   * Returns the baseURL.
+   * Does not handle the <base> uri if it exists.
+   *
+   * Combines url using angular '$location' service (testing issues with using window.location).
+   * Removes the port from URI if the port happens to be matched by its protocol in PORTS object.
+   *
+   * @param  {Location service} $location. Location service with port, protocol and host functions
+   * @return {String} combined absolute baseurl
+   */
+  function getBase($location) {
+    var port     = $location.port(),
+        protocol = $location.protocol();
+
+    // If the port happens to be 80 or 443, lets remove it instead.
+    port = PORTS[protocol] === port ? '' : ':' + port;
+
+    return protocol + "//" + $location.host() + port + "/";
   }
 
   /**
    * Parse the absolute location to path.
+   * Remove the hash and any hashbang formation from the url.
    *
+   * @param  {Location service} Object with port, protocol and host functions
    * @param  {String} url absolute url
    * @return {String} parsed path
    */
   function getPath($location, url) {
-    var baseurl = $location.protocol() + "://" + $location.host(),
-        path    = url.substring(baseurl.length, url.length);
+    var baseUrl  = getBase($location, url),
+        path     = url.substring(baseUrl.length); // Remove the baseURL portion from URI
 
-    // Remove the hash or hashbang and replace it with an hash
-    return path.replace(/^\/#(.*?)\//, '/');
+    // Return the path or slash
+    return path.replace(REGEXP_PATH, '/');
   }
 
   angular.module('ngWhenever', [])
-         .run([ '$location' ,'$route', '$rootScope', '$injector', function($location, $route, $rootScope, $injector) {
+         .run([ '$location', '$route', '$rootScope', '$injector', function($location, $route, $rootScope, $injector) {
 
     $rootScope.$on('$locationChangeStart', function(evt, newLocation) {
       var found    = false,

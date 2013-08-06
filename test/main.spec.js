@@ -121,6 +121,25 @@ describe('Angular whene', function() {
       expect(notCalledSpy).not.toHaveBeenCalled();
     }));
 
+    it('should cancel route if we are dealing with routing from one route to another and whenever returns falsy result', inject(function($rootScope, $location) {
+      var spy = jasmine.createSpy('basic trigger');
+      $routeProvider.when('/test/:uri', {
+        whenever : function() {
+          return false;
+        }
+      }).when('/works', { });
+      // Route to works first
+      $location.path('/works');
+      $rootScope.$digest();
+      expect($location.path()).toBe('/works');
+
+      // Route to canceled route afterwards
+      $location.path('/test/123');
+      $rootScope.$digest();
+      expect($location.path()).not.toBe('/test/123');
+    }));
+
+
     it('should cancel route if whenever returns falsy result', inject(function($rootScope, $location) {
       var spy = jasmine.createSpy('basic trigger');
       $routeProvider.when('/test/:uri', {
