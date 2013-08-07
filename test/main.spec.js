@@ -1,7 +1,7 @@
 describe('Angular whene', function() {
   var $routeProvider;
 
-  beforeEach(module('ngWhenever'));
+  beforeEach(module('ngRouteblocker'));
 
   describe('url parsing', function() {
     var spy,
@@ -11,7 +11,7 @@ describe('Angular whene', function() {
       module(function($routeProvider) {
         spy = jasmine.createSpy();
         $routeProvider.when('/hello/:you/:handsome/devil', {
-          whenever : spy
+          block : spy
         });
       });
     });
@@ -66,7 +66,7 @@ describe('Angular whene', function() {
       var calledSpy    = jasmine.createSpy();
 
       $routeProvider.when('/test/:uri', {
-        whenever : calledSpy
+        block : calledSpy
       });
 
       $location.path('/test/123');
@@ -87,7 +87,7 @@ describe('Angular whene', function() {
       var calledSpy    = jasmine.createSpy();
 
       $routeProvider.when('/test/:uri', {
-        whenever : calledSpy
+        block : calledSpy
       });
 
       $location.path('/test/123');
@@ -111,9 +111,9 @@ describe('Angular whene', function() {
       var notCalledSpy = jasmine.createSpy();
 
       $routeProvider.when('/test/:uri', {
-        whenever : calledSpy
+        block : calledSpy
       }).when('/test/:uri1', {
-        whenever : notCalledSpy
+        block : notCalledSpy
       });
       $location.path('/test/123');
       $rootScope.$digest();
@@ -121,10 +121,10 @@ describe('Angular whene', function() {
       expect(notCalledSpy).not.toHaveBeenCalled();
     }));
 
-    it('should cancel route if we are dealing with routing from one route to another and whenever returns falsy result', inject(function($rootScope, $location) {
+    it('should cancel route if we are dealing with routing from one route to another and block returns falsy result', inject(function($rootScope, $location) {
       var spy = jasmine.createSpy('basic trigger');
       $routeProvider.when('/test/:uri', {
-        whenever : function() {
+        block : function() {
           return false;
         }
       }).when('/works', { });
@@ -140,10 +140,10 @@ describe('Angular whene', function() {
     }));
 
 
-    it('should cancel route if whenever returns falsy result', inject(function($rootScope, $location) {
+    it('should cancel route if block returns falsy result', inject(function($rootScope, $location) {
       var spy = jasmine.createSpy('basic trigger');
       $routeProvider.when('/test/:uri', {
-        whenever : function() {
+        block : function() {
           return false;
         }
       });
@@ -152,10 +152,10 @@ describe('Angular whene', function() {
       expect($location.path()).not.toBe('/test/123');
     }));
 
-    it('should cancel route if whenever returns falsy result [array]', inject(function($rootScope, $location) {
+    it('should cancel route if block returns falsy result [array]', inject(function($rootScope, $location) {
       var spy = jasmine.createSpy('basic trigger');
       $routeProvider.when('/test/:uri', {
-        whenever : [function() {
+        block : [function() {
           return false;
         }]
       });
@@ -169,7 +169,7 @@ describe('Angular whene', function() {
       var spy = jasmine.createSpy('basic trigger');
       $routeProvider.when('/test/:uri', {
         templateUrl : '/wat/wat.html',
-        whenever   : function() {
+        block   : function() {
           return false;
         }
       });
@@ -178,10 +178,10 @@ describe('Angular whene', function() {
       expect($location.path()).not.toBe('/test/123');
     }));
 
-    it('should not cancel route if whenever returns truthy result', inject(function($rootScope, $location) {
+    it('should not cancel route if block returns truthy result', inject(function($rootScope, $location) {
       var spy = jasmine.createSpy('basic trigger');
       $routeProvider.when('/test/:uri', {
-        whenever : function() {
+        block : function() {
           return true;
         }
       });
@@ -190,10 +190,10 @@ describe('Angular whene', function() {
       expect($location.path()).toBe('/test/123');
     }));
 
-    it('should not cancel route if whenever returns truthy result [array]', inject(function($rootScope, $location) {
+    it('should not cancel route if block returns truthy result [array]', inject(function($rootScope, $location) {
       var spy = jasmine.createSpy('basic trigger');
       $routeProvider.when('/test/:uri', {
-        whenever : [ function() {
+        block : [ function() {
           return true;
         }]
       });
@@ -205,7 +205,7 @@ describe('Angular whene', function() {
     it('should work with dependency injection', inject(function($rootScope, $location) {
       var spy = jasmine.createSpy('basic trigger');
       $routeProvider.when('/test/:uri', {
-        whenever : function($rootScope) {
+        block : function($rootScope) {
           expect($rootScope).toBeDefined();
           spy();
         }
@@ -218,7 +218,7 @@ describe('Angular whene', function() {
     it('should work with dependency injection [array]', inject(function($rootScope, $location) {
       var spy = jasmine.createSpy('basic trigger');
       $routeProvider.when('/test/:uri', {
-        whenever : ['$rootScope', function($rootScope) {
+        block : ['$rootScope', function($rootScope) {
           expect($rootScope).toBeDefined();
           spy();
         }]
@@ -231,15 +231,15 @@ describe('Angular whene', function() {
     it('should work with dependency injection [injector]', inject(function($rootScope, $location) {
       var spy = jasmine.createSpy('basic trigger');
 
-      function whenever($rootScope) {
+      function block($rootScope) {
         expect($rootScope).toBeDefined();
         spy();
       }
 
-      whenever.$injector = [ '$rootScope' ];
+      block.$injector = [ '$rootScope' ];
 
       $routeProvider.when('/test/:uri', {
-        whenever : whenever
+        block : block
       });
       $location.path('/test/123');
       $rootScope.$digest();

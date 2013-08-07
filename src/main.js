@@ -1,15 +1,15 @@
 /**
- * Angular whenever.
+ * Angular routeblocker.
  *
  * Simple angular module that when initiated will listen to `$locationChangeStart` event.
- * If the event is called then it will go through all registered routes, will check if the route has `whenever` attribute
+ * If the event is called then it will go through all registered routes, will check if the route has `block` attribute
  * and if the route matches our current location.
  *
- * If the route matches and it has `whenever` property then it will invoke it and evaluate its result.
+ * If the route matches and it has `block` property then it will invoke it and evaluate its result.
  * If the result happens to be falsy then it will prevent the location change.
  *
- * Keep in mind that everything that happens in `whenever` function must be synchronous in order for it to matter.
- * Also you must keep in mind that you cant directly change location from the `whenever` function.
+ * Keep in mind that everything that happens in `block` function must be synchronous in order for it to matter.
+ * Also you must keep in mind that you cant directly change location from the `block` function.
  * The location change must happen asynchronously for it to work (with next tick).
  * You can do that with `$rootScope.$evalAsync` for instance.
  *
@@ -18,7 +18,7 @@
   "use strict";
 
   var PORTS       = { http : 80, https: 443 },         // List of common protocols and their matching ports
-      REGEXP_PATH = /^(([^\#]*?)(#[^\/]*?))\/(\?.*)?/  // Regexp for figuring out the pathname
+      REGEXP_PATH = /^(([^\#]*?)(#[^\/]*?))\/(\?.*)?/; // Regexp for figuring out the pathname
                                                        // http://fiddle.re/2mx4a for regexp tests
 
   /**
@@ -90,28 +90,28 @@
     return path.replace(REGEXP_PATH, '/');
   }
 
-  angular.module('ngWhenever', [])
+  angular.module('ngRouteblocker', [])
          .run([ '$location', '$route', '$rootScope', '$injector', function($location, $route, $rootScope, $injector) {
 
     $rootScope.$on('$locationChangeStart', function(evt, newLocation) {
       var found    = false,
           location = getPath($location, newLocation),
-          whenever;
+          block;
 
       /**
-       * Loop through all the routes and check if their properties have ```whenever``` function
-       * If we find the route that matches and has ```whenever``` function then lets figure out the result of that
+       * Loop through all the routes and check if their properties have ```block``` function
+       * If we find the route that matches and has ```block``` function then lets figure out the result of that
        * and decide if we are going to go ahead with the routing or not.
        */
       angular.forEach($route.routes, function(properties, route) {
-        whenever = properties.whenever;
+        block = properties.block;
 
-        // Check if the whenever property is a function or an array and if the route matches
-        if (!found && (angular.isFunction(whenever) || angular.isArray(whenever)) && routeMatches(location, route)) {
+        // Check if the block property is a function or an array and if the route matches
+        if (!found && (angular.isFunction(block) || angular.isArray(block)) && routeMatches(location, route)) {
 
           // Execute the injector and parse the result.
           // If the result happens to be falsey then prevent the route
-          if (!$injector.invoke(whenever)) {
+          if (!$injector.invoke(block)) {
             found = true;
             evt.preventDefault();
           }

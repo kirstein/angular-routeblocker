@@ -7,14 +7,14 @@ module.exports = function( grunt ) {
     uglify : {
       production : {
         src: [ SRC + '/**/*.js' ],
-        dest: 'angular-whenever.min.js'
+        dest: 'angular-routeblocker.min.js'
       }
     },
 
     copy : {
       production : {
         files : [
-          { src: SRC + '/main.js', dest : 'angular-whenever.js' }
+          { src: SRC + '/main.js', dest : 'angular-routeblocker.js' }
         ]
       }
     },
@@ -30,6 +30,7 @@ module.exports = function( grunt ) {
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-karma');
 
+  grunt.registerTask('default', ['build']);
   grunt.registerTask('test', [ 'karma' ]);
   grunt.registerTask('build', [ 'test', 'copy', 'uglify' ]);
 };

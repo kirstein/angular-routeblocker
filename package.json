@@ -1,19 +1,30 @@
 {
-  "name": "angular-whenever",
+  "name": "angular-routeblocker",
   "version": "0.0.3",
   "description": "Angular plugin that makes it easy to control when routes are actually triggered",
   "main": " ",
   "directories": {
     "test": "test"
   },
-  "repository": "",
+  "repository": {
+    "type" : "git",
+    "url"  : "https://github.com/kirstein/angular-routeblocker.git"
+  },
   "author": "Mikk Kirstein",
   "license": "BSD",
   "devDependencies": {
-    "karma": "~0.8.5",
+    "karma": "~0.10.1",
     "grunt": "~0.4.1",
-    "grunt-karma": "~0.4.4",
+    "grunt-karma": "~0.6.1",
     "grunt-contrib-uglify": "~0.2.0",
-    "grunt-contrib-copy": "~0.4.1"
+    "grunt-contrib-copy": "~0.4.1",
+    "karma-script-launcher": "~0.1.0",
+    "karma-firefox-launcher": "~0.1.0",
+    "karma-chrome-launcher": "~0.1.0",
+    "karma-html2js-preprocessor": "~0.1.0",
+    "karma-jasmine": "~0.1.0",
+    "karma-requirejs": "~0.1.0",
+    "karma-coffee-preprocessor": "~0.1.0",
+    "karma-phantomjs-launcher": "~0.1.0"
   }
 }
