@@ -1,6 +1,6 @@
 {
   "name": "angular-whenever",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "Angular plugin that makes it easy to control when routes are actually triggered",
   "main": " ",
   "directories": {
