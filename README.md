@@ -4,10 +4,10 @@ A module that makes decisive routing super easy.
 
 ### Getting started
 ---
-Add ```ngRouteblocker``` to required modules list
+Add ```ngRouteBlocker``` to required modules list
 
 ```
-    angular.module('myApp', [ …, 'ngRouteblocker' ]);
+    angular.module('myApp', [ …, 'ngRouteBlocker' ]);
 ```
 
 Add ```block``` function route:
@@ -31,6 +31,19 @@ In order to continue routing then the ```block``` function must return ```truthy
 If the ```block``` function returns ```truthy``` values then it will just continue with the routing.
 
 If the method returns ```falsy``` result then it will cancel the location change event so it would never reach the route configuration (no template download? _jay_).
+
+### Multiple blocking parameters
+
+By using `$routeBlockerProvider` its possible to define multiple properties to search from a route.
+The default property that `RouteBlocker` uses is `block`.
+
+`$routeBlockerProvider` has an api that consist of three methods:  
+
+1. `#getProperties` returns an array of defined properties
+2. `#addProperty` provides an easy function for adding one or multiple property names. All property names must be `strings`. To add multiple names at once one must pass an array of property names to `#addProperty` function
+3. `#removeProperty` a way to remove property names from the list. Can be used with an array.
+
+
 
 ### Dependency injection with ```block``` function
 

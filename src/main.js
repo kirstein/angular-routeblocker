@@ -2,24 +2,25 @@
  * Angular routeblocker.
  *
  * Simple angular module that when initiated will listen to `$locationChangeStart` event.
- * If the event is called then it will go through all registered routes, will check if the route has `block` attribute
- * and if the route matches our current location.
+ * If the event is called then it will go through all registered routes and will check for the route properties.
+ * If the route happens to have some properties that are defined for routeBlocker that return falsey then it will block the route.
  *
- * If the route matches and it has `block` property then it will invoke it and evaluate its result.
- * If the result happens to be falsy then it will prevent the location change.
+ * By default there is only one property the angular routeBlocker is looking for and thats `block`.
+ * However angular routeBlocker provides $routeBlockProvider that you can config in order to add more properties to check.
  *
- * Keep in mind that everything that happens in `block` function must be synchronous in order for it to matter.
- * Also you must keep in mind that you cant directly change location from the `block` function.
+ * Keep in mind that everything that happens in `blocking` functions must be synchronous in order for it to matter.
+ * Also you must keep in mind that you cant directly change location from the blocking function.
  * The location change must happen asynchronously for it to work (with next tick).
  * You can do that with `$rootScope.$evalAsync` for instance.
  *
+ * Have fun!
  */
 (function (angular) {
   "use strict";
 
-  var PORTS       = { http : 80, https: 443 },         // List of common protocols and their matching ports
-      REGEXP_PATH = /^(([^\#]*?)(#[^\/]*?))\/(\?.*)?/; // Regexp for figuring out the pathname
-                                                       // http://fiddle.re/2mx4a for regexp tests
+  var PORTS        = { http : 80, https: 443 },         // List of common protocols and their matching ports
+      REGEXP_PATH  = /^(([^\#]*?)(#[^\/]*?))\/(\?.*)?/, // Regexp for figuring out the pathname http://fiddle.re/2mx4a for regexp tests
+      DEF_PROPERTY = 'block';
 
   /**
    * Validates if the route matches given path.
@@ -90,13 +91,121 @@
     return path.replace(REGEXP_PATH, '/');
   }
 
-  angular.module('ngRouteblocker', [])
-         .run([ '$location', '$route', '$rootScope', '$injector', function($location, $route, $rootScope, $injector) {
+  function contains(list, item) {
+    for (var i = 0; i < list.length; i++) {
+      if (list[i] === item) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Loops through the list and uses its values for property keys.
+   * If the property values for those keys happen to be an arrays or functions then it will return the list of findings.
+   *
+   * @param {Array} list list of keys to search
+   * @param {Object} properties from what to extract values by list items
+   * @return {Array} array of matching properties
+   */
+  function getValidProperties(list, properties) {
+    var result = [];
+
+    angular.forEach(list, function(property) {
+      var prop = properties[property];
+      if (angular.isArray(prop) || angular.isFunction(prop)) {
+        result.push(prop);
+      }
+    });
+
+    return result;
+  }
+
+  // Define the angular module for the route blocker
+  var routeBlockerModule = angular.module('ngRouteBlocker', []);
+  routeBlockerModule.provider('$routeBlocker', function() {
+
+    // List of properties.
+    // By default the property list contains the DEF_PROPERTY ('block')
+    var properties = [ DEF_PROPERTY ];
+
+    /**
+     * Remove a property or multiple property handlers from a list.
+     *
+     * @param {String|Array} prop property name or list of properties to remove.
+     */
+    this.removeProperty = function(prop) {
+      if (prop) {
+        // If the target is an array
+        // lets remove each property off that list
+        if (angular.isArray(prop)) {
+          return this.removeProperty.apply(this, prop);
+        }
+
+        angular.forEach(properties, function(property, index, list) {
+          // If the property matches then
+          // remove the index from given list
+          if (property === prop) {
+            list.splice(index, 1);
+          }
+        });
+      }
+    };
+
+    /**
+     * @return {Array} list of property names
+     */
+    this.getProperties = function() {
+      return properties;
+    };
+
+    /**
+     * Adds a property or a list of properties to property definition list.
+     *
+     * @param {String|Array} prop property or a list of properties to add
+     * @return {Array} all properties that are currently registered
+     * @throws Error when the added data does not contain strings
+     */
+    this.addProperty = function(prop) {
+      angular.forEach([].concat(prop), function(property) {
+        if (angular.isString(property)) {
+          if (!contains(properties, property)) {
+            properties.push(property);
+          }
+        } else {
+          throw new Error('Invalid RouteBlocker property name');
+        }
+      });
+
+      return properties;
+    };
+
+    /**
+     * $properties constructor
+     * @returns {Object} object with getProperties function
+     */
+    this.$get = function() {
+      return {
+        getProperties : this.getProperties
+      };
+    };
+  });
+
+  // Run block that starts to listen for the `$locationChangeStart` event
+  routeBlockerModule.run([ '$routeBlocker', '$location', '$route', '$rootScope', '$injector', function($routeBlocker, $location, $route, $rootScope, $injector) {
+
+    // Get all properties
+    var props = $routeBlocker.getProperties();
+
+    // If there are zero properties defined
+    // then lets just call it a day.
+    if (!props.length) {
+      return;
+    }
 
     $rootScope.$on('$locationChangeStart', function(evt, newLocation) {
       var found    = false,
-          location = getPath($location, newLocation),
-          block;
+          location = getPath($location, newLocation);
 
       /**
        * Loop through all the routes and check if their properties have ```block``` function
@@ -104,17 +213,21 @@
        * and decide if we are going to go ahead with the routing or not.
        */
       angular.forEach($route.routes, function(properties, route) {
-        block = properties.block;
+        var validProperties = getValidProperties(props, properties);
 
         // Check if the block property is a function or an array and if the route matches
-        if (!found && (angular.isFunction(block) || angular.isArray(block)) && routeMatches(location, route)) {
+        if (!found && validProperties.length && routeMatches(location, route)) {
 
-          // Execute the injector and parse the result.
-          // If the result happens to be falsey then prevent the route
-          if (!$injector.invoke(block)) {
-            found = true;
-            evt.preventDefault();
-          }
+          // Go through all route properties that match our requirements
+          angular.forEach(validProperties, function(property) {
+
+            // Execute the injector and parse the result.
+            // If the result happens to be falsy then prevent the route
+            if (!found && !$injector.invoke(property)) {
+              found = true;
+              evt.preventDefault();
+            }
+          });
         }
       });
     });
