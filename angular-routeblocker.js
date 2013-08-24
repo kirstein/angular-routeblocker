@@ -78,7 +78,7 @@
     // If the port happens to be 80 or 443, lets remove it instead.
     port = PORTS[protocol] === port ? '' : ':' + port;
 
-    return protocol + "//" + $location.host() + port + "/";
+    return protocol + "://" + $location.host() + port;
   }
 
   /**
